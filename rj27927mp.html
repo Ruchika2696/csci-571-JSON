@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    
+
+<meta charset="utf-8"/>
+
+
+
+	</head>
+<body>
+
+<div style="vertical-align: top; padding-top: 100px;" align="center">
+<h3>Enter URL for Highest-grossing films List JSON File</h3>
+<form name="myform" method="POST" id="location"  style="vertical-align: top; ">
+<input type="text" name="URL" maxlength="255" />
+<br><br>
+<input type="button" name="submit" value="Submit Query"
+onClick="viewJSON(this.form)" />
+</form>
+</div>
+
+<script type="text/javascript">
+
+function viewJSON(what){
+	var URL = what.URL.value;
+	function loadJSON(url) {
+		if (window.XMLHttpRequest)
+			{// code for IE7+, Firefox, Chrome, Opera, Safari
+				xmlhttp=new XMLHttpRequest();
+			} 
+			else {// code for IE6, IE5
+				xmlhttp=new ActiveXObject("Microsoft.XMLHTTP"); }
+				xmlhttp.open("GET",url,false); // "synchronous"
+				xmlhttp.send();
+				if (xmlhttp.status == "404") {
+        			window.alert("The file does not exist")
+    			}
+    		else{
+
+    			try{
+				jsonObj= JSON.parse(xmlhttp.responseText);
+			}
+			catch(err){
+				window.alert("you are reading an invalid file");
+			}
+				if(isEmpty(jsonObj)){
+					window.alert("You are trying to read an empty file. Please check your file");
+				}
+				if(norow(jsonObj.Mainline.Table)){
+					window.alert("There are no film entries available");
+				}
+				else{
+					return jsonObj; 
+				}
+			}
+			}
+
+	jsonObj = loadJSON(URL);
+	if (window.ActiveXObject) //if IE, simply execute script (due to async prop).
+	{ 
+		if (jsonObj.parseError.errorCode != 0) {
+			var myErr = jsonObj.parseError;
+			generateError(jsonObj);
+			hWin = window.open("", "Error", "height=2000 ,width=2000");
+			hWin.document.write(html_text);
+			}
+		 else { generateHTML(jsonObj);
+			hWin = window.open("", "Assignment4", "height=2000,width=2000");
+			hWin.document.write(html_text);
+			 }
+	} 
+	else //else if FF, execute script once JSON object has loaded
+	{ 
+		jsonObj.onload=generateHTML(jsonObj);
+		hWin = window.open("", "Assignment4", "height=2000,width=2000");
+		hWin.document.write(html_text); 
+	} 
+	hWin.document.close(); 
+}
+
+
+function norow(obj)
+{
+	if(obj.hasOwnProperty("Row")){
+		return false;
+	}
+	else{
+		return true;
+	}
+}
+
+function isEmpty(obj) {
+    for(var key in obj) {
+        if(obj.hasOwnProperty(key))
+            return false;
+    }
+    return true;
+}
+
+// obj = JSON.parse("myjson.json")
+function generateHTML(jsonObj) {
+	root=jsonObj.DocumentElement;
+	html_text="<html><head><title>JSON Parse Result</title></head><body>";
+	html_text+="<table width=100% border='2'>";
+	// caption=jsonObj.catalog.title;
+	// html_text+="<caption align='left'><h1>"+caption+"</h1></caption>";
+	movies=jsonObj.Mainline.Table.Row;
+	header_value = jsonObj.Mainline.Table.Header.Data;
+	 // an array of planes
+	movieNodeList=movies[0];
+	html_text+="<tbody>";
+	html_text+="<tr>";
+	x=0; y=0;
+// output the headers
+	var header_keys = header_value;
+	for(i=0;i<header_keys.length;i++) {
+		header=header_keys[i];
+		// if(header=="Title") { header="Title"; x=120; y=55; }
+		// if(header=="Year") { header="Year"; x=100; y=67; }
+		// if(header=="Hubs") { header="Info"; }
+			
+		// if(header=="Gross") header="Worldwide Gross";
+		// if(header=="HomePage"){ header="Wiki Page";}
+		// if(header=="Logo") header="Logo";
+		html_text+="<th>"+header+"</th>";
+	}
+
+	html_text+="</tr>";
+// output out the values
+	for(i=0;i<movies.length;i++) //do for all planes (one per row)
+	{
+		movieNodeList=movies[i]; //get properties of a plane (an object)
+		html_text+="<tr>"; //start a new row of the output table
+		var movie_keys = Object.keys(movieNodeList);
+		for(j=0;j<movie_keys.length;j++)
+		{
+			description = " ";
+			// partial_html = "<ul>";
+			prop = movie_keys[j];
+			if(movie_keys[j]=="HomePage"){
+				html_text+= "<td width=450px> <a target='_blank' href='" + movieNodeList[prop]+ "'>"+movieNodeList[prop]+" </a> </td>";
+			}
+
+			if(movie_keys[j]=="Logo")
+			{//handle images separately
+				html_text+="<td><img style='object-fit:cover; height:150px; width:100px;' src='"+ movieNodeList[prop] +"'></td>";
+			} 
+			else if(movie_keys[j]=="Hubs")
+			{
+				 partial_html = "<ul>";
+				hubNodeList = movieNodeList[prop];
+
+				var hub_keys = Object.keys(hubNodeList);
+
+				for(k=0; k<hub_keys.length; k++)
+				{
+					prop1 = hub_keys[k];
+					if(hubNodeList[prop1][0] == undefined){
+						partial_html+="";
+					}
+					else{
+						partial_html+= "<b><li>" + hubNodeList[prop1][0] + "</li></b>";
+					}
+					
+					// description+=hub_keys[k];
+						for(l=1; l<hubNodeList[prop1].length; l++)
+						{
+							if(hubNodeList[prop1][l]== undefined)
+							{
+								partial_html+="";
+							}
+							else{
+								partial_html+="<li>"+ hubNodeList[prop1][l] + "</li>";
+							}
+
+						
+					}
+					// description+= hubNodeList[prop1];
+					partial_html+="</ul>"
+				}
+				html_text+="<td width=684px>"+ partial_html +"</td>";	
+			}
+			if(movie_keys[j]=="Title"){
+				html_text+="<td width=50px>"+ movieNodeList[prop] +"</td>";
+			}
+			if(movie_keys[j]=="Gross")
+			{
+				html_text+="<td>"+ movieNodeList[prop] +"</td>";
+			}
+			else if(movie_keys[j]=="Year"){
+				html_text+="<td>"+ movieNodeList[prop] +"</td>";
+				
+			}
+
+		}
+		html_text+="</tr>";
+	}
+
+	html_text+="</tbody>";
+	html_text+="</table>";
+	html_text+="</body></html>"; 
+}
+
+
+</script>
+</body>
+</html>
